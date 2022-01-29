@@ -46,7 +46,7 @@ bool goalReached = false;
 void UpdateDrawFrame(); // Update and Draw one frame
 void DrawMouseWidget(Vector2 pos, Color color);
 void DrawBodies();
-void UpdateBall(PhysicsBody ball);
+void UpdateBall(PhysicsBody ball, Vector2 goal);
 
 //----------------------------------------------------------------------------------
 // Main Enry Point
@@ -127,11 +127,11 @@ void UpdateDrawFrame()
 
     if (goalReached)
     {
-        DrawText("Goal", screenWidth / 2, screenHeight / 2, 10, WHITE);
+        DrawText("That was close!", screenWidth / 2, screenHeight / 2, 10, WHITE);
     }
 
-    DrawText("Left mouse button to create a polygon", 10, 10, 10, WHITE);
-    DrawText("Right mouse button to create a circle", 10, 25, 10, WHITE);
+    DrawText("Press left mouse button to drag", 10, 10, 10, WHITE);
+    DrawText("Release to launch ball", 10, 25, 10, WHITE);
 
     Vector2 mousePos = GetMousePosition();
     DrawMouseWidget(mousePos, RAYWHITE);
@@ -204,11 +204,11 @@ void UpdateBall(PhysicsBody ball, Vector2 goal)
             ball->velocity = Vector2Add(ball->velocity, oppositeDirection);
         }
 
-        speed = Vector2Length(ball->velocity);
-        printf("Ending frame speed = %f\n", speed);
     }
+    speed = Vector2Length(ball->velocity);
+    printf("Ending frame speed = %f\n", speed);
 
-    if (Vector2Distance(ball->position, goal) < GOAL_RADIUS)
+    if (speed == 0 && Vector2Distance(ball->position, goal) < GOAL_RADIUS)
     {
         goalReached = true;
     }

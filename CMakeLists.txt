@@ -26,12 +26,18 @@ set(ENV{CLANG_PATH} $ENV{EMSDK}/upstream/bin)
 set(ENV{NODE_PATH} $ENV{EMSDK}/node/14.15.5_64bit/bin)
 
 
+#list(APPEND CMAKE_MODULE_PATH "--preload-file resources")
+set(EMCC_LINKER_FLAGS "--preload-file resources")
+
+
 #set(raylib_VERBOSE 1)
 target_link_libraries(${PROJECT_NAME} raylib)
 
 # Web Configurations
 if (${PLATFORM} STREQUAL "Web")
     # Tell Emscripten to build an example.html file.
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -s USE_GLFW=3 -s ASSERTIONS=1 -s WASM=1 -s ASYNCIFY --preload-file resources")
+
     set_target_properties(${PROJECT_NAME} PROPERTIES SUFFIX ".html")
 endif()
 

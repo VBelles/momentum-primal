@@ -25,21 +25,11 @@
 #define CUTE_TILED_IMPLEMENTATION
 #include "cute_tiled.h"
 
-typedef struct World
-{
-    float ea;
-
-} World;
-
 //----------------------------------------------------------------------------------
 // Global Variables Definition
 //----------------------------------------------------------------------------------
 int screenWidth = 896;
 int screenHeight = 504;
-
-World *world = NULL;
-
-Texture2D texture;
 
 //----------------------------------------------------------------------------------
 // Module Functions Declaration
@@ -58,10 +48,6 @@ int main()
     // Initialize physics and default physics bodies
     InitPhysics();
 
-    World newWorld;
-
-    world = &newWorld;
-
     // Load level physics
     cute_tiled_map_t *map = cute_tiled_load_map_from_file("resources/level1.json", NULL);
     float ratio = screenWidth / (float)map->width;
@@ -72,7 +58,7 @@ int main()
         cute_tiled_object_t *object;
         for (object = layer->objects; object != NULL; object = object->next)
         {
-            /*PhysicsBody body = CreatePhysicsBodyRectangle((Vector2){0, 0}, object->width, object->height, 10.0f);
+            PhysicsBody body = CreatePhysicsBodyRectangle((Vector2){0, 0}, object->width, object->height, 10.0f);
 
             if (object->rotation != 0)
             {
@@ -82,26 +68,12 @@ int main()
             SetPhysicsBodyRotation(body, object->rotation * DEG2RAD);
 
             body->position.x += object->x + object->width / 2.0f;
-            body->position.y += object->y + object->height / 2.0f;*/
-
-            PhysicsBody body = CreatePhysicsBodyPolygon((Vector2){0, 0}, 0, 0, 10.0f);
-
+            body->position.y += object->y + object->height / 2.0f;
             body->enabled = false;
-
-            PhysicsVertexData data = {0};
-            body->shape.vertexData.vertexCount = object->vert_count;
-            for (int i = 0; i < object->vert_count * 2; i += 2)
-            {
-                printf("%f, %f\n", object->vertices[i], object->vertices[i + 1]);
-                body->shape.vertexData.positions[i].x = object->vertices[i];
-                body->shape.vertexData.positions[i].y = object->vertices[i + 1];
-            }
         }
     }
 
-    InitWindow(screenWidth, screenHeight, "raylib [core] example - 2d camera");
-
-    texture = LoadTexture("resources/texture.png");
+    InitWindow(screenWidth, screenHeight, "Momentun Primal");
 
 #if defined(PLATFORM_WEB)
     emscripten_set_main_loop(UpdateDrawFrame, 0, 1);
@@ -183,10 +155,6 @@ void UpdateDrawFrame()
 
     DrawText("Left mouse button to create a polygon", 10, 10, 10, WHITE);
     DrawText("Right mouse button to create a circle", 10, 25, 10, WHITE);
-    DrawText("Press 'R' to reset example", 10, 40, 10, WHITE);
-
-    // DrawTexture(texture, 0, 0, WHITE);
-
     EndDrawing();
 
     //----------------------------------------------------------------------------------

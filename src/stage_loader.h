@@ -4,19 +4,29 @@ typedef struct StageData
     Vector2 initialPlayerPosition;
     Vector2 goalPosition;
     cute_tiled_map_t *map;
-    
+
     bool goalReached;
     double goalReachedAt;
     bool launched;
 
     PhysicsBody ball;
 
+    bool victory;
+
 } StageData;
 
 StageData LoadStage(int level)
 {
     StageData stage = {0};
+
+    if (level >= 4)
+    {
+        stage.victory = true;
+        level = 1;
+    }
+
     stage.level = level;
+
     char *stagePath = (char *)malloc(21 * sizeof(char));
     sprintf(stagePath, "resources/level%d.json", level);
     stage.map = cute_tiled_load_map_from_file(stagePath, NULL);

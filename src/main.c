@@ -39,17 +39,13 @@ int main()
 {
     // Initialization
     //--------------------------------------------------------------------------------------
-    InitWindow(screenWidth, screenHeight, "raylib [core] example - basic window");
+    InitWindow(screenWidth, screenHeight, "Momentum Primal");
 
     HideCursor();
 
     // Initialize physics and default physics bodies
     InitPhysics();
     SetPhysicsTimeStep(1.0 / 60.0 / 100 * 1000); // 0.16ms
-
-    // Load level physics
-    cute_tiled_map_t *map = cute_tiled_load_map_from_file("resources/level1.json", NULL);
-    float ratio = screenWidth / (float)map->width;
 
     stage = LoadStage(1);
 
@@ -70,7 +66,7 @@ int main()
     //--------------------------------------------------------------------------------------
     ClosePhysics(); // Unitialize physics
     CloseWindow();  // Close window and OpenGL context
-    cute_tiled_free_map(map);
+    FreeStage(&stage);
     //--------------------------------------------------------------------------------------
 
     return 0;
@@ -81,10 +77,23 @@ int main()
 //----------------------------------------------------------------------------------
 void UpdateDrawFrame()
 {
+
+    
+
     // Update
     //----------------------------------------------------------------------------------
     UpdatePhysics(); // Update physics system
     UpdateBall();
+    if (IsKeyPressed(KEY_R))
+    {
+        FreeStage(&stage);
+        stage = LoadStage(stage.level);
+    }
+    if (IsKeyPressed(KEY_N))
+    {
+        FreeStage(&stage);
+        stage = LoadStage(stage.level + 1);
+    }
     //----------------------------------------------------------------------------------
 
     // Draw
@@ -99,11 +108,20 @@ void UpdateDrawFrame()
 
     if (stage.goalReached)
     {
-        DrawText("That was close!", screenWidth / 2, screenHeight / 2, 10, WHITE);
+        DrawText("That was close!", screenWidth / 2, screenHeight / 2, 16, DARKGRAY);
     }
 
-    DrawText("Press left mouse button to drag", 10, 10, 10, DARKGRAY);
-    DrawText("Release to launch ball", 10, 25, 10, DARKGRAY);
+    DrawText("Press left mouse button to drag. Release to launch.", 10, 10, 12, DARKGRAY);
+    DrawText("Press R to restart stage", 10, 25, 12, DARKGRAY);
+    DrawText("Press N to jump to next stage", 10, 40, 12, DARKGRAY);
+
+    if (stage.victory)
+    {
+        DrawText("VICTORY! NEW LEVELS IN THE INCOMING DLC!", 100, screenHeight / 2 - 20, 30, DARKGRAY);
+    }
+    else if(stage.level == 1){
+        DrawText("Reach the green ball", 100, screenHeight - 120, 20, DARKGRAY);
+    }
 
     Vector2 mousePos = GetMousePosition();
     DrawMouseWidget(mousePos, DARKGRAY);
@@ -160,7 +178,6 @@ void UpdateBall()
     }
     else
     {
-        printf("starting frame speed = %f\n", speed);
         if (speed <= 0.005f)
         {
             ball->velocity = (Vector2){0, 0};
@@ -179,7 +196,6 @@ void UpdateBall()
     }
 
     speed = Vector2Length(ball->velocity);
-    printf("Ending frame speed = %f\n", speed);
 
     // Goal condition
     if (speed == 0 && Vector2Distance(ball->position, stage.goalPosition) < GOAL_RADIUS)
@@ -243,7 +259,6 @@ void DrawBodies()
             }
         }
     }
-
 }
 
 void DrawMouseWidget(Vector2 pos, Color color)

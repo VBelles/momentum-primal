@@ -26,15 +26,18 @@
 #define CUTE_TILED_IMPLEMENTATION
 #include "cute_tiled.h"
 
+#define GOAL_RADIUS 25.0f
+
+#include "stage_loader.h"
+
+
 //----------------------------------------------------------------------------------
 // Global Variables Definition
 //----------------------------------------------------------------------------------
 int screenWidth = 896;
 int screenHeight = 504;
 PhysicsBody ball;
-
-int goalRadius = 25;
-Vector2 goal;
+StageData stage;
 bool goalReached = false;
 
 //----------------------------------------------------------------------------------
@@ -64,35 +67,7 @@ int main()
     cute_tiled_map_t *map = cute_tiled_load_map_from_file("resources/level1.json", NULL);
     float ratio = screenWidth / (float)map->width;
 
-    cute_tiled_layer_t *layer;
-    for (layer = map->layers; layer != NULL; layer = layer->next)
-    {
-        cute_tiled_object_t *object;
-        for (object = layer->objects; object != NULL; object = object->next)
-        {
-
-            if (object->ellipse)
-            {
-                goal = (Vector2){object->x + goalRadius / 2, object->y + goalRadius / 2};
-            }
-            else
-            {
-                PhysicsBody body = CreatePhysicsBodyRectangle((Vector2){0, 0}, object->width, object->height, 10.0f);
-
-                if (object->rotation != 0)
-                {
-                    // body->position.x -= object->width / 2.0f;
-                }
-
-                SetPhysicsBodyRotation(body, object->rotation * DEG2RAD);
-
-                body->position.x += object->x + object->width / 2.0f;
-                body->position.y += object->y + object->height / 2.0f;
-                body->enabled = false;
-                body->restitution = 1.0f;
-            }
-        }
-    }
+    stage = LoadStage(1);
 
     // Create ball
     Vector2 initialPosition = {(float)screenWidth / 2.0f, (float)screenHeight * 0.670f}; // screen goes from top to bottom
@@ -136,7 +111,7 @@ void UpdateDrawFrame()
     // Update
     //----------------------------------------------------------------------------------
     UpdatePhysics(); // Update physics system
-    UpdateBall(ball, goal);
+    UpdateBall(ball, stage.goalPosition);
     //----------------------------------------------------------------------------------
 
     // Draw
@@ -148,7 +123,7 @@ void UpdateDrawFrame()
     DrawFPS(screenWidth - 90, screenHeight - 30);
 
     DrawBodies();
-    DrawCircle(goal.x, goal.y, goalRadius, RAYWHITE);
+    DrawCircle(stage.goalPosition.x, stage.goalPosition.y, GOAL_RADIUS, RAYWHITE);
 
     if (goalReached)
     {
@@ -233,7 +208,7 @@ void UpdateBall(PhysicsBody ball, Vector2 goal)
         printf("Ending frame speed = %f\n", speed);
     }
 
-    if (Vector2Distance(ball->position, goal) < goalRadius)
+    if (Vector2Distance(ball->position, goal) < GOAL_RADIUS)
     {
         goalReached = true;
     }
@@ -286,3 +261,4 @@ void DrawMouseWidget(Vector2 pos, Color color)
     DrawPixel(pos.x, pos.y - 3, color);
     DrawPixel(pos.x, pos.y - 4, color);
 }
+

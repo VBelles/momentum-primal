@@ -16,7 +16,8 @@ if (NOT raylib_FOUND) # If there's none, fetch and build raylib
 endif()
 
 # Our Project
-file(GLOB_RECURSE app_sources "src/*.h" "src/*.c")
+# file(GLOB_RECURSE app_sources "src/*.h" "src/*.c")
+file(GLOB_RECURSE app_sources "src/main.c")
 add_executable(${PROJECT_NAME} ${app_sources})
 
 set(ENV{EMSCRIPTEN_PATH} $ENV{EMSDK}/upstream/emscripten)

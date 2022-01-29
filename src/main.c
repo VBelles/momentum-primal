@@ -36,6 +36,8 @@ PhysicsBody ball;
 int goalRadius = 25;
 Vector2 goal;
 bool goalReached = false;
+Vector2 initialPosition;
+bool launched = false;
 
 //----------------------------------------------------------------------------------
 // Module Functions Declaration
@@ -70,8 +72,12 @@ int main()
         cute_tiled_object_t *object;
         for (object = layer->objects; object != NULL; object = object->next)
         {
-
-            if (object->ellipse)
+            if(object->property_count > 0)
+            {
+                initialPosition.x = object->x;
+                initialPosition.y = object->y;
+            }
+            else if (object->ellipse)
             {
                 goal = (Vector2){object->x + goalRadius / 2, object->y + goalRadius / 2};
             }
@@ -95,7 +101,7 @@ int main()
     }
 
     // Create ball
-    Vector2 initialPosition = {(float)screenWidth / 2.0f, (float)screenHeight * 0.670f}; // screen goes from top to bottom
+    //Vector2 initialPosition = {(float)screenWidth / 2.0f, (float)screenHeight * 0.670f}; // screen goes from top to bottom
     // PhysicsBody ball = CreateBall((Vector2)initialPosition, (float)screenHeight*0.03f, (float)1f);
     ball = CreatePhysicsBodyCircle(initialPosition, screenHeight * 0.03f, 0.1f);
 
@@ -205,9 +211,10 @@ void UpdateBall(PhysicsBody ball, Vector2 goal)
             directionVector = Vector2Normalize(directionVector);
 
             directionVector = Vector2Scale(directionVector, launchSpeed);
-            ;
 
             ball->velocity = directionVector;
+            launched = true;
+
         }
     }
     else
@@ -230,12 +237,23 @@ void UpdateBall(PhysicsBody ball, Vector2 goal)
         }
 
     }
+
     speed = Vector2Length(ball->velocity);
     printf("Ending frame speed = %f\n", speed);
-
-    if (speed == 0 && Vector2Distance(ball->position, goal) < goalRadius)
+    if(launched)
     {
-        goalReached = true;
+        if (speed == 0)
+        {
+            if(Vector2Distance(ball->position, goal) < goalRadius)
+            {
+                goalReached = true;
+            }
+            else
+            {
+                ball->position = initialPosition;
+            }
+            launched = false;
+        }
     }
 }
 

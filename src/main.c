@@ -44,6 +44,8 @@ int bouncingDemo();
 //----------------------------------------------------------------------------------
 int main()
 {
+    return bouncingDemo();
+
     // Initialization
     //--------------------------------------------------------------------------------------
     InitWindow(screenWidth, screenHeight, "raylib [core] example - basic window");
@@ -208,26 +210,36 @@ int bouncingDemo(void){
             
             Vector2 mousePos = GetMousePosition();
             DrawMouseWidget(mousePos, RAYWHITE);
-
+            Vector2 ballPosition = ball->position;
             Vector2 velocity = ball->velocity;
             float speed = Vector2Length(velocity);
             if(speed == 0)
             {
+                Vector2 directionVector = {(ball->position.x - mousePos.x), (ball->position.y - mousePos.y)};
+                float maxDistanceLaunch = 100.0f;
+                float lengthDirectionVector = Vector2Length(directionVector);
+                
                 if(IsMouseButtonDown(0))
                 {  
-                    //feedback - draw arrow
-                    
+                    Vector2 launchVector = directionVector;
+                    if(lengthDirectionVector > maxDistanceLaunch)
+                    {
+                        launchVector = Vector2Scale(Vector2Normalize(launchVector), maxDistanceLaunch);
+                    }
+
+                    Vector2 endPosition = Vector2Add(ballPosition, launchVector); 
+                    //void DrawLine(int startPosX, int startPosY, int endPosX, int endPosY, Color color);
+                    float greenComponent = Remap(Vector2Length(launchVector), 0, maxDistanceLaunch, 255, 0);
+                    Color launchColor = (Color){255, greenComponent, 0, 255};
+                    DrawLine(ballPosition.x, ballPosition.y, endPosition.x, endPosition.y, launchColor);
                 }
 
-                if (IsMouseButtonReleased(0))
+                else if (IsMouseButtonReleased(0))
                 {
                     //calculate direction ball - mouse and power (distance)
                     //shoot
-                    
-                    Vector2 directionVector = {(ball->position.x - mousePos.x), (ball->position.y - mousePos.y)};
-                    float length = Vector2Length(directionVector);
-                    
-                    float launchSpeed =  Remap(length, 0, 400.0f, 0, 2.0f);
+ 
+                    float launchSpeed =  Remap(lengthDirectionVector, 0, maxDistanceLaunch, 0, 0.5f);
                     launchSpeed = Clamp(launchSpeed, 0, 0.5f);
                     
                     directionVector = Vector2Normalize(directionVector);

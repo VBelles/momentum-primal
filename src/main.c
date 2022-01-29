@@ -143,6 +143,13 @@ void UpdateDrawFrame()
     //----------------------------------------------------------------------------------
     UpdatePhysics(); // Update physics system
     UpdateBall(ball, goal);
+    if (IsKeyPressed(KEY_R))
+    {
+        ball->position = initialPosition;
+        ball->velocity.x = 0;
+        ball->velocity.y = 0;
+        launched = false; 
+    }
     //----------------------------------------------------------------------------------
 
     // Draw
@@ -161,8 +168,8 @@ void UpdateDrawFrame()
         DrawText("That was close!", screenWidth / 2, screenHeight / 2, 10, WHITE);
     }
 
-    DrawText("Press left mouse button to drag", 10, 10, 10, WHITE);
-    DrawText("Release to launch ball", 10, 25, 10, WHITE);
+    DrawText("Press left mouse button to drag. Release to launch.", 10, 10, 10, WHITE);
+    DrawText("Press R to restart stage", 10, 25, 10, WHITE);
 
     Vector2 mousePos = GetMousePosition();
     DrawMouseWidget(mousePos, RAYWHITE);
@@ -239,7 +246,7 @@ void UpdateBall(PhysicsBody ball, Vector2 goal)
     }
 
     speed = Vector2Length(ball->velocity);
-    printf("Ending frame speed = %f\n", speed);
+    //printf("Ending frame speed = %f\n", speed);
     if(launched)
     {
         if (speed == 0)

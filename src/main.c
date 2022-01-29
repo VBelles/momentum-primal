@@ -33,6 +33,10 @@ int screenWidth = 896;
 int screenHeight = 504;
 PhysicsBody ball;
 
+int goalRadius = 25;
+Vector2 goal;
+bool goalReached = false;
+
 //----------------------------------------------------------------------------------
 // Module Functions Declaration
 //----------------------------------------------------------------------------------
@@ -66,19 +70,27 @@ int main()
         cute_tiled_object_t *object;
         for (object = layer->objects; object != NULL; object = object->next)
         {
-            PhysicsBody body = CreatePhysicsBodyRectangle((Vector2){0, 0}, object->width, object->height, 10.0f);
 
-            if (object->rotation != 0)
+            if (object->ellipse)
             {
-                // body->position.x -= object->width / 2.0f;
+                goal = (Vector2){object->x + goalRadius / 2, object->y + goalRadius / 2};
             }
+            else
+            {
+                PhysicsBody body = CreatePhysicsBodyRectangle((Vector2){0, 0}, object->width, object->height, 10.0f);
 
-            SetPhysicsBodyRotation(body, object->rotation * DEG2RAD);
+                if (object->rotation != 0)
+                {
+                    // body->position.x -= object->width / 2.0f;
+                }
 
-            body->position.x += object->x + object->width / 2.0f;
-            body->position.y += object->y + object->height / 2.0f;
-            body->enabled = false;
-            body->restitution = 1.0f;
+                SetPhysicsBodyRotation(body, object->rotation * DEG2RAD);
+
+                body->position.x += object->x + object->width / 2.0f;
+                body->position.y += object->y + object->height / 2.0f;
+                body->enabled = false;
+                body->restitution = 1.0f;
+            }
         }
     }
 
@@ -110,6 +122,7 @@ int main()
     //--------------------------------------------------------------------------------------
     ClosePhysics(); // Unitialize physics
     CloseWindow();  // Close window and OpenGL context
+    cute_tiled_free_map(map);
     //--------------------------------------------------------------------------------------
 
     return 0;
@@ -123,7 +136,7 @@ void UpdateDrawFrame()
     // Update
     //----------------------------------------------------------------------------------
     UpdatePhysics(); // Update physics system
-    UpdateBall(ball);
+    UpdateBall(ball, goal);
     //----------------------------------------------------------------------------------
 
     // Draw
@@ -135,6 +148,12 @@ void UpdateDrawFrame()
     DrawFPS(screenWidth - 90, screenHeight - 30);
 
     DrawBodies();
+    DrawCircle(goal.x, goal.y, goalRadius, RAYWHITE);
+
+    if (goalReached)
+    {
+        DrawText("Goal", screenWidth / 2, screenHeight / 2, 10, WHITE);
+    }
 
     DrawText("Left mouse button to create a polygon", 10, 10, 10, WHITE);
     DrawText("Right mouse button to create a circle", 10, 25, 10, WHITE);
@@ -147,7 +166,7 @@ void UpdateDrawFrame()
     //----------------------------------------------------------------------------------
 }
 
-void UpdateBall(PhysicsBody ball)
+void UpdateBall(PhysicsBody ball, Vector2 goal)
 {
     Vector2 mousePos = GetMousePosition();
     Vector2 velocity = ball->velocity;
@@ -173,7 +192,6 @@ void UpdateBall(PhysicsBody ball)
             directionVector = Vector2Normalize(directionVector);
 
             directionVector = Vector2Scale(directionVector, launchSpeed);
-        
 
             ball->velocity = directionVector;
         }
@@ -199,6 +217,11 @@ void UpdateBall(PhysicsBody ball)
 
         speed = Vector2Length(ball->velocity);
         printf("Ending frame speed = %f\n", speed);
+    }
+
+    if (Vector2Distance(ball->position, goal) < goalRadius)
+    {
+        goalReached = true;
     }
 }
 

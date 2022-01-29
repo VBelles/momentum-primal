@@ -15,7 +15,7 @@ typedef struct StageData
 
 StageData LoadStage(int level)
 {
-    StageData stage;
+    StageData stage = {0};
     stage.level = level;
     char *stagePath = (char *)malloc(21 * sizeof(char));
     sprintf(stagePath, "resources/level%d.json", level);
@@ -56,7 +56,7 @@ StageData LoadStage(int level)
     }
 
     // Create ball
-    stage.ball = CreatePhysicsBodyCircle(stage.initialPlayerPosition, 15, 0.1f);
+    stage.ball = CreatePhysicsBodyCircle(stage.initialPlayerPosition, PLAYER_RADIUS, 0.1f);
     stage.ball->staticFriction = 0.0f;  // Friction when the body has not movement (0 to 1)
     stage.ball->dynamicFriction = 0.0f; // Friction when the body has movement (0 to 1)
     stage.ball->restitution = 1.0f;     // Restitution coefficient of the body (0 to 1)

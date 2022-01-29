@@ -12,6 +12,7 @@
 #include "cute_tiled.h"
 
 #define GOAL_RADIUS 50.0f
+#define PLAYER_RADIUS 15.0f
 
 #include "stage_loader.h"
 
@@ -29,7 +30,7 @@ StageData stage;
 void UpdateDrawFrame(); // Update and Draw one frame
 void DrawMouseWidget(Vector2 pos, Color color);
 void DrawBodies();
-void UpdateBall(PhysicsBody ball, Vector2 goal);
+void UpdateBall();
 
 //----------------------------------------------------------------------------------
 // Main Enry Point
@@ -83,38 +84,38 @@ void UpdateDrawFrame()
     // Update
     //----------------------------------------------------------------------------------
     UpdatePhysics(); // Update physics system
-    UpdateBall(stage.ball, stage.goalPosition);
+    UpdateBall();
     //----------------------------------------------------------------------------------
 
     // Draw
     //----------------------------------------------------------------------------------
     BeginDrawing();
 
-    ClearBackground(BLACK);
+    ClearBackground(RAYWHITE);
 
     DrawFPS(screenWidth - 90, screenHeight - 30);
 
     DrawBodies();
-    DrawCircle(stage.goalPosition.x, stage.goalPosition.y, GOAL_RADIUS, RAYWHITE);
 
     if (stage.goalReached)
     {
         DrawText("That was close!", screenWidth / 2, screenHeight / 2, 10, WHITE);
     }
 
-    DrawText("Press left mouse button to drag", 10, 10, 10, WHITE);
-    DrawText("Release to launch ball", 10, 25, 10, WHITE);
+    DrawText("Press left mouse button to drag", 10, 10, 10, DARKGRAY);
+    DrawText("Release to launch ball", 10, 25, 10, DARKGRAY);
 
     Vector2 mousePos = GetMousePosition();
-    DrawMouseWidget(mousePos, RAYWHITE);
+    DrawMouseWidget(mousePos, DARKGRAY);
 
     EndDrawing();
 
     //----------------------------------------------------------------------------------
 }
 
-void UpdateBall(PhysicsBody ball, Vector2 goal)
+void UpdateBall()
 {
+    PhysicsBody ball = stage.ball;
     Vector2 mousePos = GetMousePosition();
 
     Vector2 ballPosition = ball->position;
@@ -181,7 +182,7 @@ void UpdateBall(PhysicsBody ball, Vector2 goal)
     printf("Ending frame speed = %f\n", speed);
 
     // Goal condition
-    if (speed == 0 && Vector2Distance(ball->position, goal) < GOAL_RADIUS)
+    if (speed == 0 && Vector2Distance(ball->position, stage.goalPosition) < GOAL_RADIUS)
     {
         stage.goalReached = true;
         stage.goalReachedAt = GetTime();
@@ -198,11 +199,11 @@ void UpdateBall(PhysicsBody ball, Vector2 goal)
     {
         if (speed == 0)
         {
-            if (Vector2Distance(ball->position, goal) < GOAL_RADIUS)
+            if (Vector2Distance(ball->position, stage.goalPosition) < GOAL_RADIUS)
             {
                 stage.goalReached = true;
                 FreeStage(&stage);
-                LoadStage(stage.level + 1);
+                stage = LoadStage(stage.level + 1);
             }
             else
             {
@@ -215,6 +216,12 @@ void UpdateBall(PhysicsBody ball, Vector2 goal)
 
 void DrawBodies()
 {
+
+    DrawCircle(stage.goalPosition.x, stage.goalPosition.y, GOAL_RADIUS, GREEN);
+    DrawCircleLines(stage.goalPosition.x, stage.goalPosition.y, GOAL_RADIUS, DARKGRAY);
+
+    DrawCircle(stage.ball->position.x, stage.ball->position.y, PLAYER_RADIUS, GRAY);
+
     int bodiesCount = GetPhysicsBodiesCount();
     for (int i = 0; i < bodiesCount; i++)
     {
@@ -232,10 +239,11 @@ void DrawBodies()
                 int jj = (((j + 1) < vertexCount) ? (j + 1) : 0); // Get next vertex or first to close the shape
                 Vector2 vertexB = GetPhysicsShapeVertex(body, jj);
 
-                DrawLineV(vertexA, vertexB, GREEN); // Draw a line between two vertex positions
+                DrawLineV(vertexA, vertexB, DARKGRAY); // Draw a line between two vertex positions
             }
         }
     }
+
 }
 
 void DrawMouseWidget(Vector2 pos, Color color)

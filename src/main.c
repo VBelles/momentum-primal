@@ -1,18 +1,3 @@
-/*******************************************************************************************
- *
- *   raylib [core] example - Basic window (adapted for HTML5 platform)
- *
- *   This example is prepared to compile for PLATFORM_WEB, PLATFORM_DESKTOP and PLATFORM_RPI
- *   As you will notice, code structure is slightly diferent to the other examples...
- *   To compile it for PLATFORM_WEB just uncomment #define PLATFORM_WEB at beginning
- *
- *   This example has been created using raylib 1.3 (www.raylib.com)
- *   raylib is licensed under an unmodified zlib/libpng license (View raylib.h for details)
- *
- *   Copyright (c) 2015 Ramon Santamaria (@raysan5)
- *
- ********************************************************************************************/
-
 #include "raylib.h"
 #include "raymath.h"
 
@@ -26,20 +11,17 @@
 #define CUTE_TILED_IMPLEMENTATION
 #include "cute_tiled.h"
 
-#define GOAL_RADIUS 25.0f
+#define GOAL_RADIUS 50.0f
 
 #include "stage_loader.h"
-
 
 //----------------------------------------------------------------------------------
 // Global Variables Definition
 //----------------------------------------------------------------------------------
 int screenWidth = 896;
 int screenHeight = 504;
-PhysicsBody ball;
+
 StageData stage;
-bool goalReached = false;
-double goalReachedAt = 0;
 
 //----------------------------------------------------------------------------------
 // Module Functions Declaration
@@ -69,17 +51,6 @@ int main()
     float ratio = screenWidth / (float)map->width;
 
     stage = LoadStage(1);
-
-    // Create ball
-    Vector2 initialPosition = {(float)screenWidth / 2.0f, (float)screenHeight * 0.670f}; // screen goes from top to bottom
-    // PhysicsBody ball = CreateBall((Vector2)initialPosition, (float)screenHeight*0.03f, (float)1f);
-    ball = CreatePhysicsBodyCircle(initialPosition, screenHeight * 0.03f, 0.1f);
-
-    ball->staticFriction = 0.0f;  // Friction when the body has not movement (0 to 1)
-    ball->dynamicFriction = 0.0f; // Friction when the body has movement (0 to 1)
-    ball->restitution = 1.0f;     // Restitution coefficient of the body (0 to 1)
-    ball->useGravity = false;     // Apply gravity force to dynamics
-    ball->freezeOrient = false;   // Physics rotation constraint
 
 #if defined(PLATFORM_WEB)
     emscripten_set_main_loop(UpdateDrawFrame, 0, 1);
@@ -112,7 +83,7 @@ void UpdateDrawFrame()
     // Update
     //----------------------------------------------------------------------------------
     UpdatePhysics(); // Update physics system
-    UpdateBall(ball, stage.goalPosition);
+    UpdateBall(stage.ball, stage.goalPosition);
     //----------------------------------------------------------------------------------
 
     // Draw
@@ -126,7 +97,7 @@ void UpdateDrawFrame()
     DrawBodies();
     DrawCircle(stage.goalPosition.x, stage.goalPosition.y, GOAL_RADIUS, RAYWHITE);
 
-    if (goalReached)
+    if (stage.goalReached)
     {
         DrawText("That was close!", screenWidth / 2, screenHeight / 2, 10, WHITE);
     }
@@ -181,9 +152,9 @@ void UpdateBall(PhysicsBody ball, Vector2 goal)
             directionVector = Vector2Normalize(directionVector);
 
             directionVector = Vector2Scale(directionVector, launchSpeed);
-            ;
 
             ball->velocity = directionVector;
+            stage.launched = true;
         }
     }
     else
@@ -204,23 +175,41 @@ void UpdateBall(PhysicsBody ball, Vector2 goal)
 
             ball->velocity = Vector2Add(ball->velocity, oppositeDirection);
         }
-
     }
+
     speed = Vector2Length(ball->velocity);
     printf("Ending frame speed = %f\n", speed);
 
     // Goal condition
     if (speed == 0 && Vector2Distance(ball->position, goal) < GOAL_RADIUS)
     {
-        goalReached = true;
-        goalReachedAt = GetTime();
+        stage.goalReached = true;
+        stage.goalReachedAt = GetTime();
     }
 
     // Load next stage 1 second after goal condition
-    if(goalReached && GetTime() - goalReachedAt > 1){
+    /*if (goalReached && GetTime() - goalReachedAt > 1)
+    {
         goalReached = false;
         FreeStage(&stage);
         LoadStage(stage.level + 1);
+    }*/
+    if (stage.launched)
+    {
+        if (speed == 0)
+        {
+            if (Vector2Distance(ball->position, goal) < GOAL_RADIUS)
+            {
+                stage.goalReached = true;
+                FreeStage(&stage);
+                LoadStage(stage.level + 1);
+            }
+            else
+            {
+                ball->position = stage.initialPlayerPosition;
+            }
+            stage.launched = false;
+        }
     }
 }
 
@@ -271,4 +260,3 @@ void DrawMouseWidget(Vector2 pos, Color color)
     DrawPixel(pos.x, pos.y - 3, color);
     DrawPixel(pos.x, pos.y - 4, color);
 }
-

@@ -4,6 +4,13 @@ typedef struct StageData
     Vector2 initialPlayerPosition;
     Vector2 goalPosition;
     cute_tiled_map_t *map;
+    
+    bool goalReached;
+    double goalReachedAt;
+    bool launched;
+
+    PhysicsBody ball;
+
 } StageData;
 
 StageData LoadStage(int level)
@@ -20,8 +27,12 @@ StageData LoadStage(int level)
         cute_tiled_object_t *object;
         for (object = layer->objects; object != NULL; object = object->next)
         {
-
-            if (object->ellipse)
+            if (object->property_count > 0)
+            {
+                stage.initialPlayerPosition.x = object->x;
+                stage.initialPlayerPosition.y = object->y;
+            }
+            else if (object->ellipse)
             {
                 stage.goalPosition = (Vector2){object->x + GOAL_RADIUS / 2, object->y + GOAL_RADIUS / 2};
             }
@@ -43,6 +54,15 @@ StageData LoadStage(int level)
             }
         }
     }
+
+    // Create ball
+    stage.ball = CreatePhysicsBodyCircle(stage.initialPlayerPosition, 15, 0.1f);
+    stage.ball->staticFriction = 0.0f;  // Friction when the body has not movement (0 to 1)
+    stage.ball->dynamicFriction = 0.0f; // Friction when the body has movement (0 to 1)
+    stage.ball->restitution = 1.0f;     // Restitution coefficient of the body (0 to 1)
+    stage.ball->useGravity = false;     // Apply gravity force to dynamics
+    stage.ball->freezeOrient = false;   // Physics rotation constraint
+
     return stage;
 }
 

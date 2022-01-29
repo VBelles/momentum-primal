@@ -1,15 +1,17 @@
 typedef struct StageData
 {
-    Vector2 playerPosition;
+    int level;
+    Vector2 initialPlayerPosition;
     Vector2 goalPosition;
     cute_tiled_map_t *map;
 } StageData;
 
-StageData LoadStage(int number)
+StageData LoadStage(int level)
 {
     StageData stage;
-    char *stagePath = (char*)malloc(21 * sizeof(char));
-    sprintf(stagePath,"resources/level%d.json", number);
+    stage.level = level;
+    char *stagePath = (char *)malloc(21 * sizeof(char));
+    sprintf(stagePath, "resources/level%d.json", level);
     stage.map = cute_tiled_load_map_from_file(stagePath, NULL);
     free(stagePath);
     cute_tiled_layer_t *layer;
@@ -42,4 +44,10 @@ StageData LoadStage(int number)
         }
     }
     return stage;
+}
+
+void FreeStage(StageData *stage)
+{
+    ResetPhysics();
+    cute_tiled_free_map(stage->map);
 }

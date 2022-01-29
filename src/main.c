@@ -39,6 +39,7 @@ int screenHeight = 504;
 PhysicsBody ball;
 StageData stage;
 bool goalReached = false;
+double goalReachedAt = 0;
 
 //----------------------------------------------------------------------------------
 // Module Functions Declaration
@@ -208,9 +209,18 @@ void UpdateBall(PhysicsBody ball, Vector2 goal)
     speed = Vector2Length(ball->velocity);
     printf("Ending frame speed = %f\n", speed);
 
+    // Goal condition
     if (speed == 0 && Vector2Distance(ball->position, goal) < GOAL_RADIUS)
     {
         goalReached = true;
+        goalReachedAt = GetTime();
+    }
+
+    // Load next stage 1 second after goal condition
+    if(goalReached && GetTime() - goalReachedAt > 1){
+        goalReached = false;
+        FreeStage(&stage);
+        LoadStage(stage.level + 1);
     }
 }
 

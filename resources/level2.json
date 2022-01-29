@@ -59,8 +59,8 @@
                  "type":"",
                  "visible":true,
                  "width":56,
-                 "x":168,
-                 "y":112
+                 "x":280,
+                 "y":224
                 }, 
                 {
                  "height":56,
@@ -70,8 +70,8 @@
                  "type":"",
                  "visible":true,
                  "width":56,
-                 "x":504,
-                 "y":336
+                 "x":406,
+                 "y":182
                 }, 
                 {
                  "height":56,
@@ -81,8 +81,8 @@
                  "type":"",
                  "visible":true,
                  "width":56,
-                 "x":672,
-                 "y":168
+                 "x":532,
+                 "y":70
                 }, 
                 {
                  "height":56,
@@ -92,7 +92,7 @@
                  "type":"",
                  "visible":true,
                  "width":56,
-                 "x":112,
+                 "x":658,
                  "y":280
                 }, 
                 {

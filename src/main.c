@@ -5,11 +5,11 @@
 #include <emscripten/emscripten.h>
 #endif
 
-#define PHYSAC_IMPLEMENTATION
-#include "extras/physac.h"
-
 #define CUTE_TILED_IMPLEMENTATION
 #include "cute_tiled.h"
+
+#define CUTE_C2_IMPLEMENTATION
+#include "cute_c2.h"
 
 #define GOAL_RADIUS 50.0f
 #define PLAYER_RADIUS 15.0f
@@ -43,10 +43,6 @@ int main()
 
     HideCursor();
 
-    // Initialize physics and default physics bodies
-    InitPhysics();
-    SetPhysicsTimeStep(1.0 / 60.0 / 100 * 1000); // 0.16ms
-
     stage = LoadStage(1);
 
 #if defined(PLATFORM_WEB)
@@ -64,8 +60,7 @@ int main()
 
     // De-Initialization
     //--------------------------------------------------------------------------------------
-    ClosePhysics(); // Unitialize physics
-    CloseWindow();  // Close window and OpenGL context
+    CloseWindow(); // Close window and OpenGL context
     FreeStage(&stage);
     //--------------------------------------------------------------------------------------
 
@@ -78,11 +73,8 @@ int main()
 void UpdateDrawFrame()
 {
 
-    
-
     // Update
     //----------------------------------------------------------------------------------
-    UpdatePhysics(); // Update physics system
     UpdateBall();
     if (IsKeyPressed(KEY_R))
     {
@@ -119,7 +111,8 @@ void UpdateDrawFrame()
     {
         DrawText("VICTORY! NEW LEVELS IN THE INCOMING DLC!", 100, screenHeight / 2 - 20, 30, DARKGRAY);
     }
-    else if(stage.level == 1){
+    else if (stage.level == 1)
+    {
         DrawText("Reach the green ball", 100, screenHeight - 120, 20, DARKGRAY);
     }
 
@@ -133,15 +126,14 @@ void UpdateDrawFrame()
 
 void UpdateBall()
 {
-    PhysicsBody ball = stage.ball;
+    float dt = GetFrameTime();
+    Vector2 ballPosition = {stage.ball.p.x, stage.ball.p.y};
     Vector2 mousePos = GetMousePosition();
 
-    Vector2 ballPosition = ball->position;
-    Vector2 velocity = ball->velocity;
-    float speed = Vector2Length(velocity);
+    float speed = Vector2Length(stage.ballVelocity);
     if (speed == 0)
     {
-        Vector2 directionVector = {(ball->position.x - mousePos.x), (ball->position.y - mousePos.y)};
+        Vector2 directionVector = Vector2Subtract(ballPosition, mousePos);
         float maxDistanceLaunch = 100.0f;
         float lengthDirectionVector = Vector2Length(directionVector);
 
@@ -165,57 +157,48 @@ void UpdateBall()
             // calculate direction ball - mouse and power (distance)
             // shoot
 
-            float launchSpeed = Remap(lengthDirectionVector, 0, maxDistanceLaunch, 0, 0.5f);
-            launchSpeed = Clamp(launchSpeed, 0, 0.5f);
+            float launchSpeed = Remap(lengthDirectionVector, 0, maxDistanceLaunch, 0, 300);
+            launchSpeed = Clamp(launchSpeed, 0, 300);
 
             directionVector = Vector2Normalize(directionVector);
 
             directionVector = Vector2Scale(directionVector, launchSpeed);
 
-            ball->velocity = directionVector;
+            stage.ballVelocity = directionVector;
             stage.launched = true;
         }
     }
     else
     {
-        if (speed <= 0.005f)
+        if (speed <= 0.5f)
         {
-            ball->velocity = (Vector2){0, 0};
+            stage.ballVelocity = (Vector2){0, 0};
         }
         else
         {
-            Vector2 oppositeDirection = velocity;
-            oppositeDirection.x = -oppositeDirection.x;
-            oppositeDirection.y = -oppositeDirection.y;
+            Vector2 oppositeDirection = Vector2Negate(stage.ballVelocity);
             oppositeDirection = Vector2Normalize(oppositeDirection);
-            float deceleration = GetFrameTime() * 0.06f; // a * t
+            float deceleration = dt * 60.0f; // a * t
             oppositeDirection = Vector2Scale(oppositeDirection, deceleration);
 
-            ball->velocity = Vector2Add(ball->velocity, oppositeDirection);
+            stage.ballVelocity = Vector2Add(stage.ballVelocity, oppositeDirection);
         }
     }
 
-    speed = Vector2Length(ball->velocity);
+    speed = Vector2Length(stage.ballVelocity);
 
     // Goal condition
-    if (speed == 0 && Vector2Distance(ball->position, stage.goalPosition) < GOAL_RADIUS)
+    if (speed == 0 && Vector2Distance(ballPosition, stage.goalPosition) < GOAL_RADIUS)
     {
         stage.goalReached = true;
         stage.goalReachedAt = GetTime();
     }
 
-    // Load next stage 1 second after goal condition
-    /*if (goalReached && GetTime() - goalReachedAt > 1)
-    {
-        goalReached = false;
-        FreeStage(&stage);
-        LoadStage(stage.level + 1);
-    }*/
     if (stage.launched)
     {
         if (speed == 0)
         {
-            if (Vector2Distance(ball->position, stage.goalPosition) < GOAL_RADIUS)
+            if (Vector2Distance(ballPosition, stage.goalPosition) < GOAL_RADIUS)
             {
                 stage.goalReached = true;
                 FreeStage(&stage);
@@ -223,9 +206,34 @@ void UpdateBall()
             }
             else
             {
-                ball->position = stage.initialPlayerPosition;
+                stage.ball.p.x = stage.initialPlayerPosition.x;
+                stage.ball.p.y = stage.initialPlayerPosition.y;
             }
             stage.launched = false;
+        }
+    }
+
+    stage.ball.p.x += stage.ballVelocity.x * dt;
+    stage.ball.p.y += stage.ballVelocity.y * dt;
+
+    for (int i = 0; i < stage.obstaclesCount; i++)
+    {
+        c2AABB obstacle = stage.obstacles[i];
+        c2Manifold manifold;
+        c2CircletoAABBManifold(stage.ball, obstacle, &manifold);
+        if (manifold.count > 0)
+        {
+            if (manifold.n.x != 0)
+            {
+                stage.ballVelocity.x = -stage.ballVelocity.x;
+                stage.ball.p.x += stage.ballVelocity.x * dt; // Easy, dirty and fake depenetration
+            }
+            if (manifold.n.y != 0)
+            {
+                stage.ballVelocity.y = -stage.ballVelocity.y;
+                stage.ball.p.y += stage.ballVelocity.y * dt;
+            }
+            break;
         }
     }
 }
@@ -236,28 +244,14 @@ void DrawBodies()
     DrawCircle(stage.goalPosition.x, stage.goalPosition.y, GOAL_RADIUS, GREEN);
     DrawCircleLines(stage.goalPosition.x, stage.goalPosition.y, GOAL_RADIUS, DARKGRAY);
 
-    DrawCircle(stage.ball->position.x, stage.ball->position.y, PLAYER_RADIUS, GRAY);
+    DrawCircle(stage.ball.p.x, stage.ball.p.y, stage.ball.r, GRAY);
+    DrawCircleLines(stage.ball.p.x, stage.ball.p.y, stage.ball.r, DARKGRAY);
 
-    int bodiesCount = GetPhysicsBodiesCount();
-    for (int i = 0; i < bodiesCount; i++)
+    for (int i = 0; i < stage.obstaclesCount; i++)
     {
-        PhysicsBody body = GetPhysicsBody(i);
-
-        if (body != NULL)
-        {
-            int vertexCount = GetPhysicsShapeVerticesCount(i);
-            for (int j = 0; j < vertexCount; j++)
-            {
-                // Get physics bodies shape vertices to draw lines
-                // Note: GetPhysicsShapeVertex() already calculates rotation transformations
-                Vector2 vertexA = GetPhysicsShapeVertex(body, j);
-
-                int jj = (((j + 1) < vertexCount) ? (j + 1) : 0); // Get next vertex or first to close the shape
-                Vector2 vertexB = GetPhysicsShapeVertex(body, jj);
-
-                DrawLineV(vertexA, vertexB, DARKGRAY); // Draw a line between two vertex positions
-            }
-        }
+        c2AABB *obstacle = &stage.obstacles[i];
+        DrawRectangleLines(obstacle->min.x, obstacle->min.y, obstacle->max.x - obstacle->min.x,
+                           obstacle->max.y - obstacle->min.y, DARKGRAY);
     }
 }
 

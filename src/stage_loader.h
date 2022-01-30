@@ -1,3 +1,6 @@
+#ifndef STAGE_LOADER_H_
+#define STAGE_LOADER_H_
+
 typedef struct StageData
 {
     int level;
@@ -9,7 +12,10 @@ typedef struct StageData
     double goalReachedAt;
     bool launched;
 
-    PhysicsBody ball;
+    c2Circle ball;
+    Vector2 ballVelocity;
+    c2AABB obstacles[100];
+    int obstaclesCount;
 
     bool victory;
 
@@ -37,47 +43,34 @@ StageData LoadStage(int level)
         cute_tiled_object_t *object;
         for (object = layer->objects; object != NULL; object = object->next)
         {
-            if (object->property_count > 0)
+            if (object->property_count > 0) // Player
             {
                 stage.initialPlayerPosition.x = object->x;
                 stage.initialPlayerPosition.y = object->y;
             }
-            else if (object->ellipse)
+            else if (object->ellipse) // Goal
             {
                 stage.goalPosition = (Vector2){object->x + GOAL_RADIUS / 2, object->y + GOAL_RADIUS / 2};
             }
-            else
+            else // Obstacles
             {
-                PhysicsBody body = CreatePhysicsBodyRectangle((Vector2){0, 0}, object->width, object->height, 10.0f);
-
-                if (object->rotation != 0)
-                {
-                    // body->position.x -= object->width / 2.0f;
-                }
-
-                SetPhysicsBodyRotation(body, object->rotation * DEG2RAD);
-
-                body->position.x += object->x + object->width / 2.0f;
-                body->position.y += object->y + object->height / 2.0f;
-                body->enabled = false;
-                body->restitution = 1.0f;
+                c2AABB *obstacle = &stage.obstacles[stage.obstaclesCount++];
+                obstacle->min = (c2v){object->x, object->y};
+                obstacle->max = (c2v){object->x + object->width, object->y + object->height};
             }
         }
     }
 
     // Create ball
-    stage.ball = CreatePhysicsBodyCircle(stage.initialPlayerPosition, PLAYER_RADIUS, 0.1f);
-    stage.ball->staticFriction = 0.0f;  // Friction when the body has not movement (0 to 1)
-    stage.ball->dynamicFriction = 0.0f; // Friction when the body has movement (0 to 1)
-    stage.ball->restitution = 1.0f;     // Restitution coefficient of the body (0 to 1)
-    stage.ball->useGravity = false;     // Apply gravity force to dynamics
-    stage.ball->freezeOrient = false;   // Physics rotation constraint
+    stage.ball.r = PLAYER_RADIUS;
+    stage.ball.p = (c2v){stage.initialPlayerPosition.x, stage.initialPlayerPosition.y};
 
     return stage;
 }
 
 void FreeStage(StageData *stage)
 {
-    ResetPhysics();
     cute_tiled_free_map(stage->map);
 }
+
+#endif

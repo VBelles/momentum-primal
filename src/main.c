@@ -178,7 +178,7 @@ void UpdateBall()
         {
             Vector2 oppositeDirection = Vector2Negate(stage.ballVelocity);
             oppositeDirection = Vector2Normalize(oppositeDirection);
-            float deceleration = dt * 60.0f; // a * t
+            float deceleration = dt * 40.0f; // a * t
             oppositeDirection = Vector2Scale(oppositeDirection, deceleration);
 
             stage.ballVelocity = Vector2Add(stage.ballVelocity, oppositeDirection);
